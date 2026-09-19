@@ -47,8 +47,12 @@ export default function DemoWorkspace({ kind }: { kind: DemoKind }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ kind, input }),
       });
-      const data = await response.json();
+      const contentType = response.headers.get('content-type') || '';
+      const data = contentType.includes('application/json')
+        ? await response.json()
+        : { error: `The AI endpoint returned an unexpected response (${response.status}). Redeploy the project with server-side API routes enabled.` };
       if (!response.ok) throw new Error(data.error || 'The AI service could not respond.');
+      if (!contentType.includes('application/json')) throw new Error(data.error);
       setResult(data);
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : 'The AI service could not respond.');
